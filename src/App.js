@@ -6,11 +6,10 @@ import Reports from './components/Reports';
 import Products from './components/Products';
 import ProductDetail from './components/ProductDetail';
 import StockReconciliation from './components/StockReconciliation';
-import './App.css';
 import Invoice from "./components/Invoice";
 import InvoiceHistory from "./components/InvoiceHistory";
-
-import "./App.css";
+import StockTransfer from "./components/StockTransfer";
+import './App.css';
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard');
@@ -29,6 +28,7 @@ function App() {
       case 'products': return <Products onProductClick={(p) => navigate('product-detail', p)} />;
       case 'product-detail': return <ProductDetail product={selectedProduct} onBack={() => navigate('products')} />;
       case 'stock-reconciliation': return <StockReconciliation />;
+      case 'stock-transfer': return <StockTransfer navigate={navigate} />;
       case 'invoice': return <Invoice navigate={navigate} />;
       case 'invoice-history': return <InvoiceHistory navigate={navigate} />;
       default: return <Dashboard />;
