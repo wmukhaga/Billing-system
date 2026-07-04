@@ -39,7 +39,7 @@ function App() {
     }
   };
 
-  return (
+ return (
     <div className="app-container">
       <Sidebar activePage={activePage} navigate={navigate} />
       <div className="main-content">
