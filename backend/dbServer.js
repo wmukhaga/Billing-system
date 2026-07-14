@@ -7,6 +7,7 @@ import SalesRouter from "./Sales.js";
 import SuppliersRouter from "./Suppliers.js";
 import UsersRouter from "./Users.js";
 import CustomerRouter from "./Customer.js";
+import PurchaseRouter from "./Purchase.js";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use("/api/sales", SalesRouter);
 app.use("/api/suppliers", SuppliersRouter);
 app.use("/api/users", UsersRouter);
 app.use("/api/customers", CustomerRouter);
+app.use("/api/purchases", PurchaseRouter);
 
 
 const PORT = 3001;
@@ -30,11 +32,6 @@ app.listen(PORT, () => {
 
 app.get("/", (req, res) => {
     res.send("Backend is running");
-    // if (res){
-    //     console.log("Backend is running");
-    // } else {
-    //     console.log("Backend is not running");
-    // }
 });
 
 export default app;

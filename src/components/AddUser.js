@@ -3,26 +3,37 @@ import '../App.css';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
-export default function AddUser({ onSuccess, onCancel }) {
+export default function AddUser({
+  user = null,
+  onSuccess,
+  onCancel,
+}) {
+  const editing = user !== null;
+
   const [formData, setFormData] = useState({
-  name: "",
-  role: "",
-  email: "",
-  phone: "",
-    });
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    role: user?.role || '',
+    salary: user?.salary || '',
+    password: '',
+  });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === 'salary' ? (value === '' ? '' : Number(value)) : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
     setError('');
 
@@ -33,46 +44,86 @@ export default function AddUser({ onSuccess, onCancel }) {
     }
 
     try {
-        console.log("Sending to backend:", formData);
-        const response = await fetch(`${API_BASE_URL}/users`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || "Failed to add user");
-            }
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        role: formData.role,
+        salary: formData.salary === '' ? 0 : formData.salary,
+      };
 
-        const newUser = await response.json();
-        console.log('user added:', newUser);
-        
-        if (onSuccess) {
-            onSuccess(newUser);
-        }
-        
+      // Only send password if entered
+      if (formData.password.trim() !== '') {
+        payload.password = formData.password;
+      }
+
+      const url = editing
+        ? `${API_BASE_URL}/users/${user.id}`
+        : `${API_BASE_URL}/users`;
+
+      const method = editing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Operation failed');
+      }
+
+      if (onSuccess) {
+        onSuccess(data);
+      }
+
+      if (!editing) {
         setFormData({
-            name: '',
-            role: '',
-            email: '',
-            phone: '',
+          name: '',
+          email: '',
+          phone: '',
+          role: '',
+          salary: '',
+          password: '',
         });
-        } catch (err) {
-        console.error(err);
-        setError(err.message || 'Failed to add user. Please try again.');
-        } finally {
-        setLoading(false);
-        }
-    };
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to save user.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="table-card" style={{ maxWidth: '600px', width: '100%' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div
+        className="table-card"
+        style={{
+          maxWidth: '600px',
+          width: '100%',
+        }}
+      >
         <div className="table-card-header">
-          <div className="table-card-title">Add New User</div>
+          <div className="table-card-title">
+            {editing ? 'Edit User' : 'Add New User'}
+          </div>
         </div>
 
         <div style={{ padding: '30px' }}>
+
           {error && (
             <div
               style={{
@@ -89,9 +140,10 @@ export default function AddUser({ onSuccess, onCancel }) {
           )}
 
           <form onSubmit={handleSubmit}>
+
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
-                User Name <span style={{ color: '#d64545' }}>*</span>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600 }}>
+                Name *
               </label>
               <input
                 type="text"
@@ -99,21 +151,18 @@ export default function AddUser({ onSuccess, onCancel }) {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Enter user name"
+                required
                 style={{
                   width: '100%',
                   padding: '10px 12px',
                   border: '1px solid #e4e8ef',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
+                  borderRadius: 6,
                 }}
-                required
               />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600 }}>
                 Email
               </label>
               <input
@@ -121,43 +170,37 @@ export default function AddUser({ onSuccess, onCancel }) {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter user email"
+                placeholder="Enter email"
                 style={{
                   width: '100%',
                   padding: '10px 12px',
                   border: '1px solid #e4e8ef',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
+                  borderRadius: 6,
                 }}
               />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600 }}>
                 Phone
               </label>
               <input
-                type="tel"
+                type="text"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="Enter user phone"
+                placeholder="Enter phone"
                 style={{
                   width: '100%',
                   padding: '10px 12px',
                   border: '1px solid #e4e8ef',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
+                  borderRadius: 6,
                 }}
               />
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600 }}>
                 Role
               </label>
               <input
@@ -165,58 +208,105 @@ export default function AddUser({ onSuccess, onCancel }) {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                placeholder="Enter user role"
+                placeholder="Admin / Cashier / Manager"
                 style={{
                   width: '100%',
                   padding: '10px 12px',
                   border: '1px solid #e4e8ef',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                  boxSizing: 'border-box',
+                  borderRadius: 6,
                 }}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600 }}>
+                Salary
+              </label>
+              <input
+                type="number"
+                name="salary"
+                value={formData.salary}
+                onChange={handleChange}
+                placeholder="Enter salary"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid #e4e8ef',
+                  borderRadius: 6,
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '30px' }}>
+              <label style={{ display: 'block', marginBottom: 6, fontWeight: 600 }}>
+                Password {editing ? '(Leave blank to keep current password)' : ''}
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder={
+                  editing
+                    ? 'Leave blank to keep current password'
+                    : 'Enter password'
+                }
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid #e4e8ef',
+                  borderRadius: 6,
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 10,
+              }}
+            >
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={loading}
                 style={{
                   padding: '10px 20px',
-                  background: 'white',
-                  color: '#172033',
-                  border: '1px solid #e4e8ef',
-                  borderRadius: '6px',
+                  border: '1px solid #ddd',
+                  background: '#fff',
+                  borderRadius: 6,
                   cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  transition: 'all 0.2s ease',
                 }}
               >
                 Cancel
               </button>
+
               <button
                 type="submit"
                 disabled={loading}
                 style={{
                   padding: '10px 24px',
                   background: '#1f4e79',
-                  color: 'white',
+                  color: '#fff',
                   border: 'none',
-                  borderRadius: '6px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  opacity: loading ? 0.6 : 1,
-                  transition: 'all 0.2s ease',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  opacity: loading ? 0.7 : 1,
                 }}
               >
-                {loading ? 'Adding...' : 'Add User '}
+                {loading
+                  ? editing
+                    ? 'Saving...'
+                    : 'Adding...'
+                  : editing
+                  ? 'Save Changes'
+                  : 'Add User'}
               </button>
             </div>
+
           </form>
+
         </div>
       </div>
     </div>

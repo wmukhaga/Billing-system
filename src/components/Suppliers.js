@@ -15,6 +15,7 @@ export default function Suppliers() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/suppliers`)
@@ -68,16 +69,37 @@ export default function Suppliers() {
               overflow: 'auto',
             }}
           >
-            <AddSupplier
-              onSuccess={(newSupplier) => {
-                setSuppliers((prev) => [
-                  ...prev,
-                  mapSupplier(newSupplier),
-                ]);
-                setShowModal(false);
-              }}
-              onCancel={() => setShowModal(false)}
-            />
+             <AddSupplier
+               supplier={selectedSupplier}
+               onSuccess={(savedSupplier) => {
+ 
+                 if (selectedSupplier) {
+ 
+                   // Update edited customer
+                   setSuppliers((prev) =>
+                     prev.map((s) =>
+                       s.id === savedSupplier.id
+                         ? mapSupplier(savedSupplier)
+                         : s
+                     )
+                   );
+ 
+                 } else {
+                   setSuppliers((prev) => [
+                     ...prev,
+                     mapSupplier(savedSupplier),
+                   ]);
+ 
+                 }
+ 
+                 setSelectedSupplier(null);
+                 setShowModal(false);
+               }}
+               onCancel={() => {
+                 setSelectedSupplier(null);
+                 setShowModal(false);
+               }}
+             />
           </div>
         </div>
       )}
@@ -212,7 +234,13 @@ export default function Suppliers() {
                       <b>VIEW</b>
                     </button>
 
-                    <button className="btn btn-outline btn-sm btn-icon">
+                     <button
+                      className="btn btn-outline btn-sm btn-icon"
+                      onClick={() => {
+                        setSelectedSupplier(s);
+                        setShowModal(true);
+                      }}
+                    >
                       <b>EDIT</b>
                     </button>
                   </div>

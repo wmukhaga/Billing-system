@@ -3,25 +3,35 @@ import '../App.css';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
-export default function AddCustomer({ onSuccess, onCancel }) {
+export default function AddCustomer({
+  customer = null,
+  onSuccess,
+  onCancel,
+}) {
+  const editing = customer !== null;
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
+    name: customer?.name || '',
+    email: customer?.email || '',
+    phone: customer?.phone || '',
+    no_of_orders: customer?.no_of_orders || 0,
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "no_of_orders" ? Number(value) : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
     setError('');
 
@@ -32,41 +42,66 @@ export default function AddCustomer({ onSuccess, onCancel }) {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/customers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const url = editing
+        ? `${API_BASE_URL}/customers/${customer.id}`
+        : `${API_BASE_URL}/customers`;
+
+      const method = editing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(formData),
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to add customer");
-        }
 
-      const newCustomer = await response.json();
-      console.log('Customer added:', newCustomer);
-      
-      if (onSuccess) {
-        onSuccess(newCustomer);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Operation failed');
       }
-      
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-      });
+
+      if (onSuccess) {
+        onSuccess(data);
+      }
+
+      if (!editing) {
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          no_of_orders: 0,
+        });
+      }
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Failed to add customer. Please try again.');
+      setError(err.message || 'Something went wrong.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="table-card" style={{ maxWidth: '600px', width: '100%' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div
+        className="table-card"
+        style={{
+          maxWidth: '600px',
+          width: '100%',
+        }}
+      >
         <div className="table-card-header">
-          <div className="table-card-title">Add New Customer</div>
+          <div className="table-card-title">
+            {editing ? 'Edit Customer' : 'Add New Customer'}
+          </div>
         </div>
 
         <div style={{ padding: '30px' }}>
@@ -86,33 +121,50 @@ export default function AddCustomer({ onSuccess, onCancel }) {
           )}
 
           <form onSubmit={handleSubmit}>
+            {/* Name */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                }}
+              >
                 Customer Name <span style={{ color: '#d64545' }}>*</span>
               </label>
+
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Enter customer name"
+                required
                 style={{
                   width: '100%',
                   padding: '10px 12px',
                   border: '1px solid #e4e8ef',
                   borderRadius: '6px',
                   fontSize: '14px',
-                  fontFamily: 'inherit',
                   boxSizing: 'border-box',
                 }}
-                required
               />
             </div>
 
+            {/* Email */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                }}
+              >
                 Email
               </label>
+
               <input
                 type="email"
                 name="email"
@@ -125,70 +177,113 @@ export default function AddCustomer({ onSuccess, onCancel }) {
                   border: '1px solid #e4e8ef',
                   borderRadius: '6px',
                   fontSize: '14px',
-                  fontFamily: 'inherit',
                   boxSizing: 'border-box',
                 }}
               />
             </div>
 
+            {/* Phone */}
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                }}
+              >
                 Phone
               </label>
+
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="Enter customer phone"
+                placeholder="Enter phone number"
                 style={{
                   width: '100%',
                   padding: '10px 12px',
                   border: '1px solid #e4e8ef',
                   borderRadius: '6px',
                   fontSize: '14px',
-                  fontFamily: 'inherit',
                   boxSizing: 'border-box',
                 }}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            {/* Orders */}
+            <div style={{ marginBottom: '30px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: '6px',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                }}
+              >
+                Number of Orders
+              </label>
+
+              <input
+                type="number"
+                name="no_of_orders"
+                value={formData.no_of_orders}
+                onChange={handleChange}
+                min="0"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid #e4e8ef',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '10px',
+              }}
+            >
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={loading}
                 style={{
                   padding: '10px 20px',
-                  background: 'white',
-                  color: '#172033',
-                  border: '1px solid #e4e8ef',
+                  background: '#fff',
+                  border: '1px solid #ddd',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  transition: 'all 0.2s ease',
                 }}
               >
                 Cancel
               </button>
+
               <button
                 type="submit"
                 disabled={loading}
                 style={{
                   padding: '10px 24px',
                   background: '#1f4e79',
-                  color: 'white',
+                  color: '#fff',
                   border: 'none',
                   borderRadius: '6px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px',
+                  cursor: 'pointer',
                   opacity: loading ? 0.6 : 1,
-                  transition: 'all 0.2s ease',
                 }}
               >
-                {loading ? 'Adding...' : 'Add Customer'}
+                {loading
+                  ? editing
+                    ? 'Saving...'
+                    : 'Adding...'
+                  : editing
+                  ? 'Save Changes'
+                  : 'Add Customer'}
               </button>
             </div>
           </form>
